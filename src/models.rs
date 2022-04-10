@@ -30,10 +30,23 @@ pub fn create_user(conn: &PgConnection, username: &str, password: &str) -> Resul
     Ok(user)
 }
 
-pub fn find_user(conn: &PgConnection, username: &str) -> Result<User> {
-    users::table
-        .filter(users::username.eq(username))
-        .select((users::id, users::username, users::password))
-        .first::<User>(conn)
-        .map_err(Into::into)
+pub enum UserKey<'a> {
+    Username(&'a str),
+    ID(i32),
+}
+
+pub fn find_user<'a>(conn: &PgConnection, key: UserKey<'a>) -> Result<User> {
+    match key {
+        UserKey::Username(name) => users::table
+            .filter(users::username.eq(name))
+            .select((users::id, users::username, users::password))
+            .first::<User>(conn)
+            .map_err(Into::into),
+
+        UserKey::ID(ID) => users::table
+            .filter(users::id.eq(ID))
+            .select((users::id, users::username, users::password))
+            .first::<User>(conn)
+            .map_err(Into::into),
+    }
 }

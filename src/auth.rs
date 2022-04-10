@@ -29,7 +29,7 @@ pub fn generate_refresh_token(user: &User) -> Result<String, AppError> {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct ValidatedUser {
-    user_id: i32,
+    pub user_id: i32,
 }
 
 impl FromRequest for ValidatedUser {
@@ -45,7 +45,11 @@ impl FromRequest for ValidatedUser {
         match auth {
             Some(s) => {
                 let split: Vec<&str> = s.to_str().unwrap().split_whitespace().collect();
-                let token = split[1].trim();
+                let token = if split.len() == 2 {
+                    split[1].trim()
+                } else {
+                    return Box::pin(async { Err(ErrorUnauthorized("unauthorized")) });
+                };
                 let key = ACCESS_TOKEN_SECRET.clone();
                 let data = key.verify_token::<ValidatedUser>(token, None);
                 match data {
