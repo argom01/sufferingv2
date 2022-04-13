@@ -15,19 +15,26 @@ pub struct User {
     pub password: String,
 }
 
-pub fn create_user(conn: &PgConnection, username: &str, password: &str) -> Result<User> {
+pub fn create_user(conn: &MysqlConnection, username: &str, password: &str) -> Result<User> {
     let salt = SaltString::generate(&mut OsRng);
     let hashed_password = Argon2::default()
         .hash_password(password.as_bytes(), &salt)?
         .to_string();
 
-    let user = diesel::insert_into(users::table)
+    conn.transaction(|| {
+        diesel::insert_into(users::table)
         .values((
             users::username.eq(username),
-            users::password.eq(hashed_password),
+            users::password.eq(hashed_password)
         ))
-        .get_result(conn)?;
-    Ok(user)
+        .execute(conn)?;
+
+        users::table
+        .order(users::id.desc())
+        .select((users::id, users::username, users::password))
+        .first(conn)
+        .map_err(Into::into)
+    })
 }
 
 pub enum UserKey<'a> {
@@ -35,7 +42,7 @@ pub enum UserKey<'a> {
     ID(i32),
 }
 
-pub fn find_user<'a>(conn: &PgConnection, key: UserKey<'a>) -> Result<User> {
+pub fn find_user<'a>(conn: &MysqlConnection, key: UserKey<'a>) -> Result<User> {
     match key {
         UserKey::Username(name) => users::table
             .filter(users::username.eq(name))

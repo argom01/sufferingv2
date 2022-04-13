@@ -1,7 +1,7 @@
 table! {
     users (id) {
-        id -> Int4,
+        id -> Integer,
         username -> Varchar,
-        password -> Text,
+        password -> Varchar,
     }
 }

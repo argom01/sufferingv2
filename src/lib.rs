@@ -10,7 +10,7 @@ use diesel::r2d2::{self, ConnectionManager};
 use jwt_simple::prelude::*;
 use lazy_static::lazy_static;
 
-type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
+type Pool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
 mod auth;
 mod errors;
@@ -33,7 +33,7 @@ impl LatinApp {
     }
 
     pub async fn run(&self, db_url: String) -> std::io::Result<()> {
-        let manager = ConnectionManager::<PgConnection>::new(db_url);
+        let manager = ConnectionManager::<MysqlConnection>::new(db_url);
         let pool = r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool");
