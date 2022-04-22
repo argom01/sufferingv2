@@ -1,2 +1,2 @@
-pub(super) mod dupsko;
+pub(super) mod nouns;
 pub(super) mod users;

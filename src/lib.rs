@@ -4,7 +4,6 @@ extern crate diesel;
 extern crate serde_derive;
 
 use actix_web::{middleware, App, HttpServer};
-use actix_web_httpauth::middleware::HttpAuthentication;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use jwt_simple::prelude::*;
@@ -44,6 +43,7 @@ impl LatinApp {
                 .data(pool.clone())
                 .wrap(middleware::Logger::default())
                 .configure(routes::users::configure)
+                .configure(routes::nouns::configure)
         })
         .bind(("127.0.0.1", self.port))?
         .run()

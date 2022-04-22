@@ -1,6 +1,6 @@
-use actix_web::error::BlockingError;
+use actix_web::http::header::ContentType;
 use actix_web::web::HttpResponse;
-use actix_web_httpauth::{extractors::basic::Config, headers::www_authenticate::Challenge};
+use actix_web::{error::BlockingError, http::StatusCode};
 use diesel::result::{
     DatabaseErrorKind::UniqueViolation,
     Error::{DatabaseError, NotFound},
@@ -15,8 +15,9 @@ pub enum AppError {
     OperationCancelled,
     HashingError(argon2::password_hash::Error),
     TokenError(jwt_simple::Error),
-    AuthError(String),
+    BadPassword,
     HeaderConversionError(actix_web::http::header::ToStrError),
+    Unauthorized(String),
 }
 
 impl fmt::Display for AppError {
@@ -24,12 +25,10 @@ impl fmt::Display for AppError {
         match self {
             AppError::RecordAlreadyExists => write!(f, "This record violates a unique constraint"),
             AppError::RecordNotFound => write!(f, "This record does not exist"),
-            AppError::DatabaseError(e) => write!(f, "Database error: {:?}", e),
             AppError::OperationCancelled => write!(f, "The running operation was cancelled"),
-            AppError::HashingError(e) => write!(f, "Could not hash password: {:?}", e),
-            AppError::TokenError(e) => write!(f, "Could not authenticate token: {:?}", e),
-            AppError::AuthError(e) => write!(f, "Could not authenticate: {:?}", e),
-            AppError::HeaderConversionError(e) => write!(f, "Could not convert type: {:?}", e),
+            AppError::BadPassword => write!(f, "Wrong password"),
+            AppError::Unauthorized(e) => write!(f, "Unauthorized: {}", e),
+            _ => write!(f, "Internal server error"),
         }
     }
 }
@@ -84,13 +83,18 @@ struct ErrorResponse {
 
 impl actix_web::ResponseError for AppError {
     fn error_response(&self) -> HttpResponse {
-        let err = format!("{}", self);
-        let mut builder = match self {
-            AppError::RecordAlreadyExists => HttpResponse::BadRequest(),
-            AppError::RecordNotFound => HttpResponse::NotFound(),
-            AppError::AuthError(_) => HttpResponse::BadRequest(),
-            _ => HttpResponse::InternalServerError(),
-        };
-        builder.json(ErrorResponse { err })
+        HttpResponse::build(self.status_code()).json(ErrorResponse {
+            err: self.to_string(),
+        })
+    }
+
+    fn status_code(&self) -> StatusCode {
+        match self {
+            AppError::RecordAlreadyExists => StatusCode::BAD_REQUEST,
+            AppError::RecordNotFound => StatusCode::NOT_FOUND,
+            AppError::BadPassword => StatusCode::UNAUTHORIZED,
+            AppError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
     }
 }

@@ -1,3 +1,4 @@
 /target
 /migrations
 /.env
+/db_creds

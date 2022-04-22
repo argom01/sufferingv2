@@ -1,32 +1,39 @@
 use actix_web::{cookie::Cookie, web, HttpResponse};
 use actix_web::{HttpMessage, HttpRequest};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use diesel::prelude::*;
 use jwt_simple::prelude::*;
 
 use crate::auth::{self, ValidatedUser};
 use crate::errors::AppError;
-use crate::models::UserKey;
-use crate::schema::users;
+use crate::models::users::UserKey;
 use crate::REFRESH_TOKEN_SECRET;
 use crate::{models, Pool};
 
 #[derive(Debug, Deserialize, Serialize)]
-struct UserInput {
-    username: String,
+struct UserRegisterInput {
+    email: String,
     password: String,
+    username: String,
+    is_admin: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct TokenResponse {
+    ok: bool,
+    access_token: String,
 }
 
 async fn register_user(
-    credentials: web::Json<UserInput>,
+    data: web::Json<UserRegisterInput>,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, AppError> {
-    let data = credentials.into_inner();
-    let username = data.username;
-    let password = data.password;
+    let credentials = data.into_inner();
+    let username = credentials.username;
+    let password = credentials.password;
+    let email = credentials.email;
     let user = web::block(move || {
         let conn = &pool.get().unwrap();
-        models::create_user(conn, &username, &password)
+        models::users::create_user(conn, &email, &username, &password)
     })
     .await?;
 
@@ -39,23 +46,23 @@ async fn register_user(
     }))
 }
 
-#[derive(Debug, Serialize)]
-struct TokenResponse {
-    ok: bool,
-    access_token: String,
+#[derive(Debug, Deserialize, Serialize)]
+struct UserLoginInput {
+    email: String,
+    password: String,
 }
 
 async fn login_user(
-    credentials: web::Json<UserInput>,
+    data: web::Json<UserLoginInput>,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, AppError> {
-    let data = credentials.into_inner();
-    let username = data.username;
-    let password = data.password;
+    let credentials = data.into_inner();
+    let email = credentials.email;
+    let password = credentials.password;
     let user = web::block(move || {
         let conn = &pool.get().unwrap();
-        let user_key = UserKey::Username(username.as_str());
-        models::find_user(conn, user_key)
+        let user_key = UserKey::Email(email.as_str());
+        models::users::find_user(conn, user_key)
     })
     .await?;
 
@@ -64,11 +71,11 @@ async fn login_user(
         .verify_password(password.as_bytes(), &hash)
         .is_ok();
     if !is_correct {
-        Err(AppError::AuthError(String::from("Wrong password")))
+        Err(AppError::BadPassword)
     } else {
         let access_token = auth::generate_access_token(&user)?;
         let refresh_token = auth::generate_refresh_token(&user)?;
-        let cookie = Cookie::build("jid", refresh_token).http_only(true).finish();
+        let cookie = auth::create_refresh_token_cookie(&refresh_token);
 
         Ok(HttpResponse::Ok().cookie(cookie).json(TokenResponse {
             ok: true,
@@ -86,9 +93,9 @@ async fn refresh_token(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpRe
         })),
         Some(s) => {
             let key = REFRESH_TOKEN_SECRET.clone();
-            let data = key.verify_token::<ValidatedUser>(s.value(), None);
+            let data = key.verify_token::<auth::RefreshTokenClaims>(s.value(), None);
             match data {
-                Err(e) => Ok(HttpResponse::BadRequest().json(TokenResponse {
+                Err(_) => Ok(HttpResponse::BadRequest().json(TokenResponse {
                     ok: false,
                     access_token: "".to_string(),
                 })),
@@ -96,12 +103,23 @@ async fn refresh_token(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpRe
                     let user = web::block(move || {
                         let conn = &pool.get().unwrap();
                         let user_key = UserKey::ID(t.custom.user_id);
-                        models::find_user(conn, user_key)
+                        models::users::find_user(conn, user_key)
                     })
                     .await?;
-                    Ok(HttpResponse::Ok().json(TokenResponse {
+
+                    if t.custom.token_version != user.token_version {
+                        return Ok(HttpResponse::BadRequest().json(TokenResponse {
+                            ok: false,
+                            access_token: "".to_string(),
+                        }));
+                    }
+
+                    let refresh_token = auth::generate_refresh_token(&user)?;
+                    let access_token = auth::generate_access_token(&user)?;
+                    let cookie = auth::create_refresh_token_cookie(&refresh_token);
+                    Ok(HttpResponse::Ok().cookie(cookie).json(TokenResponse {
                         ok: true,
-                        access_token: auth::generate_access_token(&user)?,
+                        access_token,
                     }))
                 }
             }
@@ -109,13 +127,18 @@ async fn refresh_token(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpRe
     }
 }
 
-async fn dupsko(user: ValidatedUser) -> Result<HttpResponse, AppError> {
-    Ok(HttpResponse::Ok().json(format!("sraken pierdaken: {}", user.user_id)))
+async fn logout_user(_user: ValidatedUser) -> Result<HttpResponse, AppError> {
+    let access_token = String::from("");
+    let cookie = auth::create_refresh_token_cookie("");
+    Ok(HttpResponse::Ok().cookie(cookie).json(TokenResponse {
+        ok: true,
+        access_token,
+    }))
 }
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/register").route(web::post().to(register_user)))
         .service(web::resource("/login").route(web::post().to(login_user)))
-        .service(web::resource("/dupsko").route(web::get().to(dupsko)))
-        .service(web::resource("/refresh_token").route(web::get().to(refresh_token)));
+        .service(web::resource("/refresh_token").route(web::get().to(refresh_token)))
+        .service(web::resource("/logout").route(web::post().to(logout_user)));
 }

@@ -89,7 +89,7 @@ dependencies = [
  "lazy_static",
  "log",
  "mime",
- "percent-encoding 2.1.0",
+ "percent-encoding",
  "pin-project 1.0.10",
  "rand 0.7.3",
  "regex 1.5.5",
@@ -128,7 +128,7 @@ dependencies = [
  "local-channel",
  "log",
  "mime",
- "percent-encoding 2.1.0",
+ "percent-encoding",
  "pin-project-lite 0.2.8",
  "rand 0.8.5",
  "sha-1 0.10.0",
@@ -363,7 +363,7 @@ dependencies = [
  "socket2 0.3.19",
  "time 0.2.27",
  "tinyvec",
- "url 2.2.2",
+ "url",
 ]
 
 [[package]]
@@ -400,7 +400,7 @@ dependencies = [
  "smallvec",
  "socket2 0.4.4",
  "time 0.3.9",
- "url 2.2.2",
+ "url",
 ]
 
 [[package]]
@@ -559,7 +559,7 @@ dependencies = [
  "futures-core",
  "log",
  "mime",
- "percent-encoding 2.1.0",
+ "percent-encoding",
  "rand 0.7.3",
  "serde",
  "serde_json",
@@ -604,6 +604,17 @@ name = "base64ct"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a32fd6af2b5827bce66c29053ba0e7c42b9dcab01835835058558c10851a46b"
+
+[[package]]
+name = "bigdecimal"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6aaf33151a6429fe9211d1b276eafdf70cdff28b071e76c0b0e1503221ea3744"
+dependencies = [
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+]
 
 [[package]]
 name = "bitflags"
@@ -766,7 +777,7 @@ version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "03a5d7b21829bc7b4bf4754a978a241ae54ea55a40f92bb20216e54096f4b951"
 dependencies = [
- "percent-encoding 2.1.0",
+ "percent-encoding",
  "time 0.2.27",
  "version_check",
 ]
@@ -891,24 +902,33 @@ dependencies = [
 
 [[package]]
 name = "diesel"
-version = "1.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b28135ecf6b7d446b43e27e225622a038cc4e2930a1022f51cdb97ada19b8e4d"
+version = "2.0.0-rc.0"
+source = "git+https://github.com/diesel-rs/diesel#e4a1c1063617f53c653810f0883f23215998449b"
 dependencies = [
+ "bigdecimal",
+ "bitflags",
  "byteorder",
  "chrono",
  "diesel_derives",
+ "ipnetwork",
+ "libc",
  "mysqlclient-sys",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "percent-encoding",
  "r2d2",
- "url 1.7.2",
+ "serde_json",
+ "url",
+ "uuid",
 ]
 
 [[package]]
 name = "diesel_derives"
-version = "1.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45f5098f628d02a7a0f68ddba586fb61e80edec3bdc1be3b921f4ceec60858d3"
+version = "2.0.0-rc.0"
+source = "git+https://github.com/diesel-rs/diesel#e4a1c1063617f53c653810f0883f23215998449b"
 dependencies = [
+ "proc-macro-error",
  "proc-macro2 1.0.37",
  "quote 1.0.17",
  "syn 1.0.91",
@@ -1082,7 +1102,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5fc25a87fa4fd2094bffb06925852034d90a17f0d1e05197d4956d3555752191"
 dependencies = [
  "matches",
- "percent-encoding 2.1.0",
+ "percent-encoding",
 ]
 
 [[package]]
@@ -1375,17 +1395,6 @@ dependencies = [
 
 [[package]]
 name = "idna"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38f09e0f0b1fb55fdee1f17470ad800da77af5186a1a76c026b679358b7e844e"
-dependencies = [
- "matches",
- "unicode-bidi",
- "unicode-normalization",
-]
-
-[[package]]
-name = "idna"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "418a0a6fab821475f634efe3ccc45c013f742efe03d853e8d3355d5cb850ecf8"
@@ -1433,6 +1442,15 @@ dependencies = [
  "widestring",
  "winapi 0.3.9",
  "winreg",
+]
+
+[[package]]
+name = "ipnetwork"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4088d739b183546b239688ddbc79891831df421773df95e236daf7867866d355"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -1728,6 +1746,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-bigint"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f93ab6289c7b344a8a9f60f88d80aa20032336fe78da341afc91c8a2341fc75f"
+dependencies = [
+ "autocfg 1.1.0",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
 name = "num-bigint-dig"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1913,12 +1942,6 @@ dependencies = [
 
 [[package]]
 name = "percent-encoding"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31010dd2e1ac33d5b46a5b413495239882813e0369f8ed8a5e266f173602f831"
-
-[[package]]
-name = "percent-encoding"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
@@ -2027,6 +2050,30 @@ name = "ppv-lite86"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
+
+[[package]]
+name = "proc-macro-error"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da25490ff9892aab3fcf7c36f08cfb902dd3e71ca0f9f9517bea02a73a5ce38c"
+dependencies = [
+ "proc-macro-error-attr",
+ "proc-macro2 1.0.37",
+ "quote 1.0.17",
+ "syn 1.0.91",
+ "version_check",
+]
+
+[[package]]
+name = "proc-macro-error-attr"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1be40180e52ecc98ad80b184934baf3d0d29f979574e439af5a55274b35f869"
+dependencies = [
+ "proc-macro2 1.0.37",
+ "quote 1.0.17",
+ "version_check",
+]
 
 [[package]]
 name = "proc-macro-hack"
@@ -2846,14 +2893,14 @@ dependencies = [
  "cfg-if 1.0.0",
  "enum-as-inner",
  "futures",
- "idna 0.2.3",
+ "idna",
  "lazy_static",
  "log",
  "rand 0.7.3",
  "smallvec",
  "thiserror",
  "tokio 0.2.25",
- "url 2.2.2",
+ "url",
 ]
 
 [[package]]
@@ -2916,25 +2963,14 @@ checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
 
 [[package]]
 name = "url"
-version = "1.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd4e7c0d531266369519a4aa4f399d748bd37043b00bde1e4ff1f60a120b355a"
-dependencies = [
- "idna 0.1.5",
- "matches",
- "percent-encoding 1.0.1",
-]
-
-[[package]]
-name = "url"
 version = "2.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a507c383b2d33b5fc35d1861e77e6b383d158b2da5e14fe51b83dfedf6fd578c"
 dependencies = [
  "form_urlencoded",
- "idna 0.2.3",
+ "idna",
  "matches",
- "percent-encoding 2.1.0",
+ "percent-encoding",
 ]
 
 [[package]]
@@ -2942,6 +2978,12 @@ name = "utf8-ranges"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fcfc827f90e53a02eaef5e535ee14266c1d569214c6aa70133a624d8a3164ba"
+
+[[package]]
+name = "uuid"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8cfcd319456c4d6ea10087ed423473267e1a071f3bc0aa89f80d60997843c6f0"
 
 [[package]]
 name = "vcpkg"
