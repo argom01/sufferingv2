@@ -1,19 +1,19 @@
-FROM rust:1.59 as builder
+FROM lukemathwalker/cargo-chef:latest-rust-1.59.0 AS chef
+WORKDIR app
 
-RUN USER=root cargo new --bin latin-website
-WORKDIR ./latin-website
-COPY ./Cargo.toml ./Cargo.toml
-RUN cargo build --release
-RUN rm src/*.rs
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-ADD . ./
-
-RUN rm ./target/release/deps/latin_website*
-RUN cargo build --release
+FROM chef AS builder 
+COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies - this is the caching Docker layer!
+RUN cargo chef cook --release --recipe-path recipe.json
+# Build application
+COPY . .
+RUN cargo install --path .
 
 FROM debian:buster-slim as runner
-ARG APP=/usr/src/website
-
 RUN apt-get update -y
 RUN apt remove mysql-server
 RUN apt autoremove
@@ -30,22 +30,7 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg -i mysql-apt-config_0.8.22-1_all.deb
 RUN apt update
 # Add Oracle's libmysqlclient-dev
 RUN apt-get install -y libmysqlclient-dev mysql-community-client
-
+# Copy demo-api-svc executable
+COPY --from=builder /usr/local/cargo/bin/latin-website /usr/local/bin/latin-website
 EXPOSE 8000
-
-ENV TZ=Etc/UTC \
-    APP_USER=appuser \
-    RUST_LOG=actix=info
-
-RUN groupadd $APP_USER \
-    && useradd -g $APP_USER $APP_USER \
-    && mkdir -p ${APP}
-
-COPY --from=builder /latin-website/target/release/latin-website ${APP}/latin-website
-
-RUN chown -R $APP_USER:$APP_USER ${APP}
-
-USER $APP_USER
-WORKDIR ${APP}
-
-CMD ["./latin-website"]
+CMD ["latin-website"]
