@@ -3,7 +3,7 @@ use crate::schema::nouns;
 use diesel::prelude::*;
 
 #[derive(Queryable, Identifiable, Insertable, Deserialize, Serialize, Debug)]
-#[primary_key(n_sg)]
+#[diesel(primary_key(n_sg))]
 pub struct Noun {
     pub gender: String,
     pub declension: String,

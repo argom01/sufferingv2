@@ -137,9 +137,14 @@ async fn logout_user(_user: ValidatedUser) -> Result<HttpResponse, AppError> {
     }))
 }
 
+async fn ok() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/register").route(web::post().to(register_user)))
         .service(web::resource("/login").route(web::post().to(login_user)))
         .service(web::resource("/refresh_token").route(web::get().to(refresh_token)))
-        .service(web::resource("/logout").route(web::post().to(logout_user)));
+        .service(web::resource("/logout").route(web::post().to(logout_user)))
+        .service(web::resource("/").route(web::get().to(ok)));
 }
