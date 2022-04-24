@@ -16,22 +16,24 @@ pub struct User {
 }
 
 pub fn create_user(
-    conn: &MysqlConnection,
+    conn: &mut MysqlConnection,
     email: &str,
     username: &str,
     password: &str,
+    is_admin: bool,
 ) -> Result<User> {
     let salt = SaltString::generate(&mut OsRng);
     let hashed_password = Argon2::default()
         .hash_password(password.as_bytes(), &salt)?
         .to_string();
 
-    conn.transaction(|| {
+    conn.transaction(|conn| {
         diesel::insert_into(users::table)
             .values((
                 users::username.eq(username),
                 users::password.eq(hashed_password),
                 users::email.eq(email),
+                users::is_admin.eq(is_admin),
             ))
             .execute(conn)?;
 
@@ -54,7 +56,7 @@ pub enum UserKey<'a> {
     ID(i32),
 }
 
-pub fn find_user<'a>(conn: &MysqlConnection, key: UserKey<'a>) -> Result<User> {
+pub fn find_user<'a>(conn: &mut MysqlConnection, key: UserKey<'a>) -> Result<User> {
     match key {
         UserKey::Email(email) => users::table
             .filter(users::email.eq(email))
@@ -82,7 +84,7 @@ pub fn find_user<'a>(conn: &MysqlConnection, key: UserKey<'a>) -> Result<User> {
     }
 }
 
-pub fn revoke_refresh_tokens_for_user(conn: &MysqlConnection, id: i32) -> Result<()> {
+pub fn revoke_refresh_tokens_for_user(conn: &mut MysqlConnection, id: i32) -> Result<()> {
     diesel::update(users::table.filter(users::id.eq(id)))
         .set(users::token_version.eq(users::token_version + 1))
         .execute(conn)?;

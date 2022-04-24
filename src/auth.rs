@@ -1,15 +1,12 @@
-use std::future::{Future, Ready};
+use std::future::Future;
 use std::pin::Pin;
-use std::process::Output;
 
 use crate::errors::AppError;
 use crate::models::users::User;
 use crate::{ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET};
+
 use actix_web::cookie::Cookie;
-use actix_web::dev::{HttpResponseBuilder, ServiceRequest};
-use actix_web::error::ErrorUnauthorized;
-use actix_web::{Error, HttpResponse};
-use actix_web::{FromRequest, HttpMessage};
+use actix_web::FromRequest;
 use jwt_simple::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]

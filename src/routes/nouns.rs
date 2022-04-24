@@ -8,7 +8,7 @@ async fn add_noun(
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, AppError> {
     web::block(move || {
-        let conn = &pool.get().unwrap();
+        let conn = &mut pool.get().unwrap();
         models::nouns::add_noun(conn, noun.into_inner())
     })
     .await?;

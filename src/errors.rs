@@ -1,4 +1,3 @@
-use actix_web::http::header::ContentType;
 use actix_web::web::HttpResponse;
 use actix_web::{error::BlockingError, http::StatusCode};
 use diesel::result::{
@@ -28,6 +27,7 @@ impl fmt::Display for AppError {
             AppError::OperationCancelled => write!(f, "The running operation was cancelled"),
             AppError::BadPassword => write!(f, "Wrong password"),
             AppError::Unauthorized(e) => write!(f, "Unauthorized: {}", e),
+            AppError::DatabaseError(e) => write!(f, "Database error: {:?}", e),
             _ => write!(f, "Internal server error"),
         }
     }

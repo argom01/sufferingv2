@@ -31,9 +31,10 @@ async fn register_user(
     let username = credentials.username;
     let password = credentials.password;
     let email = credentials.email;
+    let is_admin = credentials.is_admin;
     let user = web::block(move || {
-        let conn = &pool.get().unwrap();
-        models::users::create_user(conn, &email, &username, &password)
+        let conn = &mut pool.get().unwrap();
+        models::users::create_user(conn, &email, &username, &password, is_admin)
     })
     .await?;
 
@@ -60,7 +61,7 @@ async fn login_user(
     let email = credentials.email;
     let password = credentials.password;
     let user = web::block(move || {
-        let conn = &pool.get().unwrap();
+        let conn = &mut pool.get().unwrap();
         let user_key = UserKey::Email(email.as_str());
         models::users::find_user(conn, user_key)
     })
@@ -101,7 +102,7 @@ async fn refresh_token(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpRe
                 })),
                 Ok(t) => {
                     let user = web::block(move || {
-                        let conn = &pool.get().unwrap();
+                        let conn = &mut pool.get().unwrap();
                         let user_key = UserKey::ID(t.custom.user_id);
                         models::users::find_user(conn, user_key)
                     })

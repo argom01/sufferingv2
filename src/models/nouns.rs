@@ -23,7 +23,7 @@ pub struct Noun {
     pub def: String,
 }
 
-pub fn add_noun(conn: &MysqlConnection, noun: Noun) -> Result<()> {
+pub fn add_noun(conn: &mut MysqlConnection, noun: Noun) -> Result<()> {
     diesel::insert_into(nouns::table)
         .values(noun)
         .execute(conn)?;
