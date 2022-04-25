@@ -5,12 +5,16 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[workspace]
+members = [
+    "prisma-cli"
+]
+
 [dependencies]
 actix-web = "3.0"
 actix-web-httpauth = "0.6"
 chrono = {version = "0.4", features = ["serde"]}
 dotenv = "0.11"
-diesel = {version = "2.0.0-rc.0", features = ["extras", "mysql", "r2d2", "chrono"]}
 env_logger = "0.6"
 serde = "1.0"
 serde_json = "1.0"
@@ -20,3 +24,4 @@ argon2 = "0.4"
 rand_core = {version = "0.6", features = ["std"]}
 jwt-simple = "0.10"
 lazy_static = "1.4"
+prisma-client-rust = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.4.0" }
