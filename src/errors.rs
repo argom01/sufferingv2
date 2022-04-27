@@ -1,22 +1,20 @@
-use actix_web::web::HttpResponse;
+use actix_web::HttpResponse;
 use actix_web::{error::BlockingError, http::StatusCode};
-use diesel::result::{
-    DatabaseErrorKind::UniqueViolation,
-    Error::{DatabaseError, NotFound},
-};
+use prisma_client_rust::{query, query_core};
 use std::fmt;
 
 #[derive(Debug)]
 pub enum AppError {
     RecordAlreadyExists,
     RecordNotFound,
-    DatabaseError(diesel::result::Error),
+    DatabaseError(query::Error),
     OperationCancelled,
     HashingError(argon2::password_hash::Error),
     TokenError(jwt_simple::Error),
     BadPassword,
     HeaderConversionError(actix_web::http::header::ToStrError),
     Unauthorized(String),
+    Other,
 }
 
 impl fmt::Display for AppError {
@@ -33,13 +31,9 @@ impl fmt::Display for AppError {
     }
 }
 
-impl From<diesel::result::Error> for AppError {
-    fn from(e: diesel::result::Error) -> Self {
-        match e {
-            DatabaseError(UniqueViolation, _) => AppError::RecordAlreadyExists,
-            NotFound => AppError::RecordNotFound,
-            _ => AppError::DatabaseError(e),
-        }
+impl From<query::Error> for AppError {
+    fn from(e: query::Error) -> Self {
+        AppError::DatabaseError(e)
     }
 }
 
@@ -47,15 +41,6 @@ impl From<argon2::password_hash::Error> for AppError {
     fn from(e: argon2::password_hash::Error) -> Self {
         match e {
             _ => AppError::HashingError(e),
-        }
-    }
-}
-
-impl From<BlockingError<AppError>> for AppError {
-    fn from(e: BlockingError<AppError>) -> Self {
-        match e {
-            BlockingError::Error(inner) => inner,
-            BlockingError::Canceled => AppError::OperationCancelled,
         }
     }
 }
@@ -94,6 +79,7 @@ impl actix_web::ResponseError for AppError {
             AppError::RecordNotFound => StatusCode::NOT_FOUND,
             AppError::BadPassword => StatusCode::UNAUTHORIZED,
             AppError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
+            &AppError::DatabaseError(_) => StatusCode::IM_A_TEAPOT,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }

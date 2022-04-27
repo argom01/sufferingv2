@@ -1,0 +1,44 @@
+datasource db {
+    url = env("DATABASE_URL")
+    provider = "mysql"
+    referentialIntegrity = "prisma"
+}
+
+generator client {
+    provider = "cargo prisma"
+    output = "./src/prisma.rs"
+    previewFeatures = ["referentialIntegrity"]
+}
+
+enum Role {
+    USER
+    ADMIN
+}
+
+model User {
+    id Int @id @default(autoincrement())
+    email String @unique
+    username String
+    password String
+    role Role 
+    token_version Int @default(1)
+}
+
+model Noun {
+    gender String //enum?
+    declension String
+    n_sg String @id @unique
+    g_sg String
+    d_sg String
+    acc_sg String
+    ab_sg String
+    voc_sg String
+    n_pl String
+    g_pl String
+    d_pl String
+    acc_pl String
+    ab_pl String
+    voc_pl String
+    translation String
+    def String
+}

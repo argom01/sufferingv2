@@ -2,7 +2,7 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::errors::AppError;
-use crate::models::users::User;
+use crate::prisma::user;
 use crate::{ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET};
 
 use actix_web::cookie::Cookie;
@@ -20,7 +20,7 @@ pub struct RefreshTokenClaims {
     pub token_version: i32,
 }
 
-pub fn generate_access_token(user: &User) -> Result<String, AppError> {
+pub fn generate_access_token(user: &user::Data) -> Result<String, AppError> {
     let key = ACCESS_TOKEN_SECRET.clone();
     let claims_data = AccessTokenClaims { user_id: user.id };
     let claims = Claims::with_custom_claims(claims_data, Duration::from_secs(60));
@@ -28,7 +28,7 @@ pub fn generate_access_token(user: &User) -> Result<String, AppError> {
     Ok(token)
 }
 
-pub fn generate_refresh_token(user: &User) -> Result<String, AppError> {
+pub fn generate_refresh_token(user: &user::Data) -> Result<String, AppError> {
     let key = REFRESH_TOKEN_SECRET.clone();
     let claim_data = RefreshTokenClaims {
         user_id: user.id,
@@ -51,7 +51,6 @@ pub struct ValidatedUser {
 impl FromRequest for ValidatedUser {
     type Error = AppError;
     type Future = Pin<Box<dyn Future<Output = Result<ValidatedUser, AppError>>>>;
-    type Config = ();
 
     fn from_request(
         req: &actix_web::HttpRequest,
