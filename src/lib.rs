@@ -44,7 +44,7 @@ impl LatinApp {
                 .configure(routes::users::configure)
                 .configure(routes::nouns::configure)
         })
-        .bind(("127.0.0.1", self.port))?
+        .bind(("0.0.0.0", self.port))?
         .run()
         .await
     }
