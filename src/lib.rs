@@ -25,30 +25,24 @@ pub struct LatinApp {
     port: u16,
 }
 
-pub struct DbClient {
-    client: Mutex<PrismaClient>,
-}
-
 impl LatinApp {
     pub fn new(port: u16) -> Self {
         LatinApp { port }
     }
 
     pub async fn run(&self, db_url: String) -> std::io::Result<()> {
-        let client = web::Data::new(DbClient {
-            client: Mutex::new(
-                prisma::new_client()
-                    .await
-                    .expect("could not create prisma client"),
-            ),
-        });
+        let client = web::Data::new(
+            prisma::new_client()
+                .await
+                .expect("could not create prisma client"),
+        );
         println!("Starting server at port {}", self.port);
         HttpServer::new(move || {
             App::new()
                 .app_data(client.clone())
                 .wrap(middleware::Logger::default())
                 .configure(routes::users::configure)
-            //.configure(routes::nouns::configure)
+                .configure(routes::nouns::configure)
         })
         .bind(("127.0.0.1", self.port))?
         .run()
